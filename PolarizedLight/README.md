@@ -1,2 +1,3 @@
-# Polarized Light Info
-TODO: Add stuff.
+# Polarized Light - Useful Links
+
++ TODO: Add links.

@@ -25,7 +25,7 @@ reset = 6
 # Function to pick 3 units from the pool and display them
 def pick_units(pool):
     display = []
-    for i in range(min(3, len(pool)):
+    for i in range(min(3, len(pool))):
         display.append(pool.pop(random.randint(0, len(pool) - 1)))
     return display.sort()
 

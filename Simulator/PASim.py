@@ -58,6 +58,8 @@ for i in range(runs):
 
         # If we have charges, maybe do a capture
         if charge > 0:
+            pick = -1
+            result = -1
             # If the boss appeared, try capturing it
             if display[2] == 2:
                 pick = 2
@@ -71,9 +73,6 @@ for i in range(runs):
             elif charge == max_charge:
                 pick = 0
                 result = capture(1)
-            # Otherwise, don't do a capture
-            else:
-                pick = -1
             
             # Check if we did a capture
             if pick != -1:

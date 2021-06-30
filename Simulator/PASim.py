@@ -89,6 +89,7 @@ for i in range(runs):
                         break
                     # Otherwise, put a new unit to display
                     else:
+                        del display[pick]
                         display.append(pool.pop(random.randint(0, len(pool) - 1)))
                         display.sort()
                 # Failure

@@ -27,7 +27,8 @@ def pick_units(pool):
     display = []
     for i in range(min(3, len(pool))):
         display.append(pool.pop(random.randint(0, len(pool) - 1)))
-    return display.sort()
+    display.sort()
+    return display
 
 # Function to simulate a capture. Returns 1 for a successful capture, 0 otherwise
 def capture(id):

@@ -61,16 +61,16 @@ for i in range(runs):
             # If the boss appeared, try capturing it
             if display[2] == 2:
                 pick = 2
-                result = attempt(2)
+                result = capture(2)
             # Otherwise, if there is a 1* unit, go for it
             elif display[0] == 0:
                 pick = 0
-                result = attempt(0)
+                result = capture(0)
             # If there are only 2* units, check if we are at max charges.
             # Only attempt capturing a 2* when at max charge
             elif charge == max_charge:
                 pick = 0
-                result = attempt(1)
+                result = capture(1)
             # Otherwise, don't do a capture
             else:
                 pick = -1

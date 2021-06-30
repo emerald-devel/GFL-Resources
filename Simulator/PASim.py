@@ -9,18 +9,12 @@ for i in range(71):
     units.append(0)
 for i in range(28):
     units.append(1)
-# These are the amount of charges you have
-charge = 14
-# This tracks the number of 12 hr time frames that have passed
-time = 0
 # Set the number of times you want to run this simulator
 runs = 100000
 # Track the number of successful runs
 success = 0
 max_charge = 14
 max_time = 60
-# Reset downtime
-reset = 6
 
 # Function to pick 3 units from the pool and display them
 def pick_units(pool):
@@ -39,10 +33,17 @@ def capture(id):
 
 for i in range(runs):
     print("Sim #" + str(i))
+    # These are the amount of charges you have
+    charge = 14
+    # This tracks the number of 12 hr time frames that have passed
+    time = 0
+    # Reset downtime
+    reset = 6
     # Make a copy of the units since we want to modify the list directly
     pool = units.copy()
     # The first displayed units when the banner starts
     display = pick_units(pool)
+    failed = True
     # We will assume a 30 day period for this
     while(time < max_time):
         # Check if we can reset
@@ -84,6 +85,7 @@ for i in range(runs):
                     if pick == 2:
                         success += 1
                         print("Success\n")
+                        failed = False
                         break
                     # Otherwise, put a new unit to display
                     else:
@@ -108,8 +110,8 @@ for i in range(runs):
             charge += 1
             if reset > 0:
                 reset -= 1
-    # If we reached this part, it means the simulation failed to capture a boss
-    print("Failure\n")
+    if failed:
+        print("Failure\n")
 
 print(str(success) + " out of " + str(runs) + " runs are successful.")
 print("Probability: " + str(success / runs * 100) + "%")

@@ -3,7 +3,8 @@ import random
 # The class that contains the state of a PA Banner Simulation Run
 class PARun(object):
     # Initialize the banner
-    def __init__(self, banner, max_time = 56, detail = False, charge = 14, reset = 6, prio_cutoff = 1, reset_prio = 1, store_prio = 2):
+    def __init__(self, banner, max_time = 56, detail = False, charge = 14, reset = 6, prio_cutoff = 1, reset_prio = 1, store_prio = 2,
+                 extra = 16, svarog = 11):
         # Stores the information on whether to print the simulation in detail or not
         self.detail = detail
         # Let 0 denote 1* units, 1 denote 2* units and 2 denote 3* units
@@ -32,7 +33,13 @@ class PARun(object):
         self.max_time = max_time
 
         # The initial amount of charge to start the simulation with
-        self.charge = 14
+        self.charge = charge
+        # The amount of extra charges a player has at the end of the banner.
+        # Per data provided by Cleista, this is 16 a month
+        self.extra = extra
+        # The amount of svarogs a player has at the end of the banner.
+        # Per data provided by Cleista, this is 11 a month
+        self.svarog = svarog
         # The number of charges used
         self.used = 0
         # The starting time period, which is time 0
@@ -40,7 +47,7 @@ class PARun(object):
         # The starting display refresh intervals
         # We assume that the refresh starts with the 72 hour countdown
         # Which is 6 time units
-        self.reset = 6
+        self.reset = reset
 
         # Initialize the displayed units from the current pool
         self.display = []
@@ -93,7 +100,9 @@ class PARun(object):
         print("Units remaining (rarity):", self.count[1:])
         print("Units remaining (priority):", self.prio_count[1:])
         print("Total units remaining:", sum(self.count))
-        print("Charges remaining:", self.charge)
+        print("Regular impulses remaining:", self.charge)
+        print("Extra impulses remaining:", self.extra)
+        print("Svarogs remaining:", self.svarog)
         print("Reset cooldown:", self.reset / 2)
         print("Currently displayed units:", self.print_display())
 
@@ -113,11 +122,17 @@ class PARun(object):
     # Attempts a capture
     def capture(self):
         unit = self.display[0]
-        if self.detail:
-            print("Action: Try to catch a " + str(unit['rarity']) + "* " +  unit['name'])
+        action = "Action: Try to catch a " + str(unit['rarity']) + "* " +  unit['name']
         # Use a charge
-        self.charge -= 1
+        if self.charge > 0:
+            self.charge -= 1
+            action += " with a regular impulse"
+        else:
+            self.extra -= 1
+            action += " with an extra impulse"
         self.used += 1
+        if self.detail:
+            print(action)
         # Note down if we encountered the ringleader
         if unit['rarity'] == 3:
             self.encounter = True
@@ -167,13 +182,25 @@ class PARun(object):
     def check_complete(self):
         if sum(self.prio_count[0 : self.prio_cutoff + 1]) == 0:
             self.complete = True
+
+    # Check if we need to do a timeskip
+    def should_inc(self):
+        # If we are out of charges, and we have not reached the end of the banner
+        # We should do a timeskip
+        if self.charge == 0 and self.time < self.max_time:
+            return True
+        # If we are at the end of a banner, and we literally cannot do anything else
+        # We do a timeskip
+        if self.charge == 0 and self.extra == 0 and self.svarog == 0 and self.time == self.max_time:
+            return True
+        return False
         
     # Performs a step of action
     def step(self):
         if self.detail:
             self.print_step_header()
-        # If you have no charges, the only thing you can do is to wait 12 hours
-        if self.charge == 0:
+        # Check if you should increase the time, and if so, do it
+        if self.should_inc():
             self.inc()
         # If a priority unit is on display, try to capture it
         elif self.display[0]['prio'] <= self.reset_prio:
@@ -195,6 +222,7 @@ class PARun(object):
             self.inc()
         if self.detail:
             print("")
+        # Check if we have achieved our target
         self.check_complete()
 
     # Perform a full simulation
@@ -223,6 +251,8 @@ reset = 6
 prio_cutoff = 1
 reset_prio = 1
 store_prio = 2
+extra = 16
+svarog = 0
 
 # Define the Scarecrow banner
 scarecrow = [{'name': 'Scarecrow', 'rarity': 3, 'prio': 1, 'count': 1},
@@ -238,7 +268,7 @@ scarecrow = [{'name': 'Scarecrow', 'rarity': 3, 'prio': 1, 'count': 1},
              {'name': 'Prowler', 'rarity': 1, 'prio': 2, 'count': 11}]
 
 # A test run with detailed prints
-myrun = PARun(scarecrow, max_time, True, charge, reset, prio_cutoff, reset_prio, store_prio)
+myrun = PARun(scarecrow, max_time, True, charge, reset, prio_cutoff, reset_prio, store_prio, extra, svarog)
 myrun.run()
 
 # Experimenting
@@ -248,7 +278,7 @@ encounter = 0
 # Scenario 1: reset whenever there is no boss
 print("Prioritize resetting")
 for i in range(runs):
-    myrun = PARun(scarecrow, max_time, False, charge, reset, prio_cutoff, reset_prio, store_prio)
+    myrun = PARun(scarecrow, max_time, False, charge, reset, prio_cutoff, reset_prio, store_prio, extra, svarog)
     result = myrun.run()
     if result > 0:
         success += 1
@@ -265,7 +295,7 @@ encounter = 0
 # Scenario 2: reset only when it's all 2*
 print("Prioritize capturing 1*")
 for i in range(runs):
-    myrun = PARun(scarecrow, max_time, False, charge, reset, prio_cutoff, 2, store_prio)
+    myrun = PARun(scarecrow, max_time, False, charge, reset, prio_cutoff, 2, store_prio, extra, svarog)
     result = myrun.run()
     if result > 0:
         success += 1

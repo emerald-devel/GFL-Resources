@@ -76,8 +76,7 @@ class PARun(object):
 
     # Function to fill in an empty display
     def fill_display(self):
-        # Since we terminate as soon as the boss is captured
-        # We will never go below 3 units to display
+        # We will never reset when we have 3 or less units remaining
         for i in range(3):
             self.pick_unit()
         # Sort the display. This is very important to simplify the code
@@ -85,7 +84,9 @@ class PARun(object):
 
     # Function to pick a unit from the pool and add to display
     def pick_unit(self):
-        self.display.append(self.pool.pop(random.randint(0, len(self.pool) - 1)))
+        # Only add to display if there are units in the pool remaining
+        if(len(self.pool) > 0):
+            self.display.append(self.pool.pop(random.randint(0, len(self.pool) - 1)))
 
     # Pretty prints the display
     def print_display(self):
@@ -119,17 +120,47 @@ class PARun(object):
         if self.reset > 0:
             self.reset -= 1
 
+    # Simulate using a Svarog
+    def use_svarog(self):
+        self.svarog -= 1
+        # Svarogs allow you to capture any unit in the pool at random, regardless if it is on display or not
+        index = random.randint(0, sum(self.count) - 1)
+        # If the unit captured is not displayed
+        if index < len(self.pool):
+            captured = self.pool.pop(index)
+        # If the unit is displayed
+        else:
+            captured = self.display.pop(index - len(self.pool))
+            # Replace a unit in display
+            self.pick_unit()
+            self.display.sort(key = self.sort_key)
+        # Note down if we encountered the ringleader
+        if captured['rarity'] == 3:
+            self.encounter = True
+        # Reduce the count of the units
+        self.count[captured['rarity']] -= 1
+        self.prio_count[captured['prio']] -= 1
+        # Print the output
+        if self.detail:
+            print("Action: Captured a " + str(captured['rarity']) + "* " +  captured['name'] + " with a Svarog")
+
     # Attempts a capture
     def capture(self):
         unit = self.display[0]
         action = "Action: Try to catch a " + str(unit['rarity']) + "* " +  unit['name']
-        # Use a charge
+        # Use a regular charge if you have one
         if self.charge > 0:
             self.charge -= 1
             action += " with a regular impulse"
-        else:
+        # Otherwise, use an extra charge if you have one
+        elif self.extra > 0:
             self.extra -= 1
             action += " with an extra impulse"
+        # If you have a Svarog, use it now
+        elif self.svarog > 0:
+            self.use_svarog()
+            # Skip the rest of the logic as it does not apply to Svarog captures
+            return
         self.used += 1
         if self.detail:
             print(action)
@@ -147,6 +178,7 @@ class PARun(object):
         if success:
             if self.detail:
                 print("Capture success")
+            # Reduce the count of the units
             self.count[unit['rarity']] -= 1
             self.prio_count[unit['prio']] -= 1
             # We will always be capturing the leftmost unit, so we can delete it 
@@ -154,7 +186,6 @@ class PARun(object):
             # Pick another unit and add it to the display
             self.pick_unit()
             self.display.sort(key = self.sort_key)
-            # Reduce the count of the units
         # Failed to capture
         else:
             if self.detail:
@@ -205,8 +236,8 @@ class PARun(object):
         # If a priority unit is on display, try to capture it
         elif self.display[0]['prio'] <= self.reset_prio:
             self.capture()
-        # If reset is available, perform a reset
-        elif self.reset == 0:
+        # If reset is available, perform a reset if there are more than 3 units remaining in the pool
+        elif self.reset == 0 and sum(self.count) > 3:
             self.reset_display()
         # If a lower priority unit is on display, try to capture it
         elif self.display[0]['prio'] <= self.store_prio:
@@ -252,7 +283,7 @@ prio_cutoff = 1
 reset_prio = 1
 store_prio = 2
 extra = 16
-svarog = 0
+svarog = 11
 
 # Define the Scarecrow banner
 scarecrow = [{'name': 'Scarecrow', 'rarity': 3, 'prio': 1, 'count': 1},

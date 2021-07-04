@@ -3,8 +3,8 @@ import random
 # The class that contains the state of a PA Banner Simulation Run
 class PARun(object):
     # Initialize the banner
-    def __init__(self, banner, max_time = 56, detail = False, charge = 14, reset = 6, prio_cutoff = 1, reset_prio = 1, store_prio = 2,
-                 extra = 16, svarog = 11):
+    def __init__(self, banner, max_time = 56, detail = False, charge = 14, prio_cutoff = 1, reset_prio = 1, store_prio = 2,
+                 extra = 16, svarog = 11, early_term = True):
         # Stores the information on whether to print the simulation in detail or not
         self.detail = detail
         # Let 0 denote 1* units, 1 denote 2* units and 2 denote 3* units
@@ -45,9 +45,9 @@ class PARun(object):
         # The starting time period, which is time 0
         self.time = 0
         # The starting display refresh intervals
-        # We assume that the refresh starts with the 72 hour countdown
+        # The refresh starts with the 72 hour countdown for every banner
         # Which is 6 time units
-        self.reset = reset
+        self.reset = 6
 
         # Initialize the displayed units from the current pool
         self.display = []
@@ -65,6 +65,9 @@ class PARun(object):
         # For example, store_prio = 2 means the algorithm does not do a timeskip
         # as long as priority 1 and 2 units are on display
         self.store_prio = store_prio
+
+        # Determines if the simulation should terminate as soon as the goals are achieved
+        self.early_term = early_term
 
         # Denotes if the ringleader is captured
         self.complete = False
@@ -260,8 +263,9 @@ class PARun(object):
     def run(self): 
         if self.detail:
             print("Simulation start")
-        # Just perform steps while there is still time and we have not captured the ringleader
-        while(self.time <= self.max_time and not self.complete):
+        # Just perform steps while there is still time and we have not completed the simulation
+        # or opt to not terminate early
+        while(self.time <= self.max_time and (not self.early_term or not self.complete)):
             self.step()
         # If we succeed, return the total number of charges used
         # TODO: Expand this section if we want to return more metadata and metrics
@@ -278,7 +282,6 @@ class PARun(object):
 # Modify the parameters if you need to do so
 max_time = 56
 charge = 14
-reset = 6
 prio_cutoff = 1
 reset_prio = 1
 store_prio = 2
@@ -299,7 +302,9 @@ scarecrow = [{'name': 'Scarecrow', 'rarity': 3, 'prio': 1, 'count': 1},
              {'name': 'Prowler', 'rarity': 1, 'prio': 2, 'count': 11}]
 
 # A test run with detailed prints
-myrun = PARun(scarecrow, max_time, True, charge, reset, prio_cutoff, reset_prio, store_prio, extra, svarog)
+myrun = PARun(scarecrow, max_time, True, charge, prio_cutoff, reset_prio, store_prio, extra, svarog, True)
+myrun.run()
+myrun = PARun(scarecrow, max_time, True, charge, prio_cutoff, reset_prio, store_prio, extra, svarog, False)
 myrun.run()
 
 # Experimenting
@@ -309,7 +314,7 @@ encounter = 0
 # Scenario 1: reset whenever there is no boss
 print("Prioritize resetting")
 for i in range(runs):
-    myrun = PARun(scarecrow, max_time, False, charge, reset, prio_cutoff, reset_prio, store_prio, extra, svarog)
+    myrun = PARun(scarecrow, max_time, False, charge, prio_cutoff, reset_prio, store_prio, extra, svarog, True)
     result = myrun.run()
     if result > 0:
         success += 1
@@ -326,7 +331,7 @@ encounter = 0
 # Scenario 2: reset only when it's all 2*
 print("Prioritize capturing 1*")
 for i in range(runs):
-    myrun = PARun(scarecrow, max_time, False, charge, reset, prio_cutoff, 2, store_prio, extra, svarog)
+    myrun = PARun(scarecrow, max_time, False, charge, prio_cutoff, 2, store_prio, extra, svarog, True)
     result = myrun.run()
     if result > 0:
         success += 1

@@ -16,6 +16,8 @@ class PARun(object):
         self.pool = []
         # Keeps the count of the units of each priority level remaining, used to determine simulation success
         self.prio_count = [0]
+        # Keeps a summary of the successes and failures of every capture
+        self.summary = {}
 
         # Populate the pool
         for i in banner:
@@ -24,6 +26,7 @@ class PARun(object):
             if len(self.prio_count) < i['prio'] + 1:
                 self.prio_count += [0] * (i['prio'] + 1 - len(self.prio_count))
             self.prio_count[i['prio']] += i['count']
+            self.summary[i['name']] = { 'success': 0, 'failure': 0 }
 
         # The number of max charges you can store up at any point in time
         self.max_charge = 14
@@ -40,8 +43,10 @@ class PARun(object):
         # The amount of svarogs a player has at the end of the banner.
         # Per data provided by Cleista, this is 11 a month
         self.svarog = svarog
-        # The number of charges used
+        # The number of charges used before completing the target
         self.used = 0
+        # The number of Svarogs used before completing the target
+        self.used_svarog = 0
         # The starting time period, which is time 0
         self.time = 0
         # The starting display refresh intervals
@@ -71,8 +76,6 @@ class PARun(object):
 
         # Denotes if the ringleader is captured
         self.complete = False
-        # Denotes if we encountered the ringleader at all
-        self.encounter = False
 
     def sort_key(self, e):
         return e['prio']
@@ -128,6 +131,7 @@ class PARun(object):
     # Simulate using a Svarog
     def use_svarog(self):
         self.svarog -= 1
+        self.used_svarog += 1
         # Svarogs allow you to capture any unit in the pool at random, regardless if it is on display or not
         index = random.randint(0, sum(self.count) - 1)
         # If the unit captured is not displayed
@@ -139,12 +143,11 @@ class PARun(object):
             # Replace a unit in display
             self.pick_unit()
             self.display.sort(key = self.sort_key)
-        # Note down if we encountered the ringleader
-        if captured['rarity'] == 3:
-            self.encounter = True
         # Reduce the count of the units
         self.count[captured['rarity']] -= 1
         self.prio_count[captured['prio']] -= 1
+        # Record the capture
+        self.summary[captured['name']]['success'] += 1
         # Print the output
         if self.detail:
             print("Action: Captured a " + str(captured['rarity']) + "* " +  captured['name'] + " with a Svarog")
@@ -166,12 +169,11 @@ class PARun(object):
             self.use_svarog()
             # Skip the rest of the logic as it does not apply to Svarog captures
             return
-        self.used += 1
+        # Record the charges used before completing the banner target
+        if not self.complete:
+            self.used += 1
         if self.detail:
             print(action)
-        # Note down if we encountered the ringleader
-        if unit['rarity'] == 3:
-            self.encounter = True
         # Try catching it
         attempt = random.random()
         if self.detail:
@@ -186,6 +188,8 @@ class PARun(object):
             # Reduce the count of the units
             self.count[unit['rarity']] -= 1
             self.prio_count[unit['prio']] -= 1
+            # Record the capture
+            self.summary[unit['name']]['success'] += 1
             # We will always be capturing the leftmost unit, so we can delete it 
             del self.display[0]
             # Pick another unit and add it to the display
@@ -195,6 +199,8 @@ class PARun(object):
         else:
             if self.detail:
                 print("Capture failure")
+            # Record the failure
+            self.summary[unit['name']]['failure'] += 1
             # Return the unit back to the pool
             self.pool.append(self.display.pop(0))
             # Pick another unit and add it to the display
@@ -273,17 +279,15 @@ class PARun(object):
         # or opt to not terminate early
         while(self.time <= self.max_time and (not self.early_term or not self.complete)):
             self.step()
-        # If we succeed, return the total number of charges used
-        # TODO: Expand this section if we want to return more metadata and metrics
-        # TODO: Collect the number of encounters needed to capture the ringleader
-        if self.complete:
-            return self.used
-        # We will use -1 to denote encountering but failing to capture
-        elif self.encounter:
-            return -1
-        # We will use -2 to denote never encountering the ringleader
-        else:
-            return -2
+        # Return a summary report of the simulation
+        return { 'complete': self.complete,
+                 'summary': self.summary,
+                 'charge': self.charge,
+                 'extra': self.extra,
+                 'svarog': self.svarog,
+                 'used': self.used,
+                 'used_svarog': self.used_svarog,
+                 'time': self.time }                 
 
 # Modify the parameters if you need to do so
 max_time = 56
@@ -309,9 +313,11 @@ scarecrow = [{'name': 'Scarecrow', 'rarity': 3, 'prio': 1, 'count': 1},
 
 # A test run with detailed prints
 myrun = PARun(scarecrow, max_time, True, charge, prio_cutoff, reset_prio, store_prio, extra, svarog, True)
-myrun.run()
+report = myrun.run()
+print(report)
 myrun = PARun(scarecrow, max_time, True, charge, prio_cutoff, reset_prio, store_prio, extra, svarog, False)
-myrun.run()
+report = myrun.run()
+print(report)
 
 # Experimenting
 runs = 100000
@@ -322,9 +328,10 @@ print("Prioritize resetting")
 for i in range(runs):
     myrun = PARun(scarecrow, max_time, False, charge, prio_cutoff, reset_prio, store_prio, extra, svarog, True)
     result = myrun.run()
-    if result > 0:
+    if result['complete']:
         success += 1
-    if result != -2:
+        encounter += 1
+    elif result['summary']['Scarecrow']['failure'] > 0:
         encounter += 1
 print(str(encounter) + " out of " + str(runs) + " had boss encounters.")
 print("Probability: " + str(encounter / runs * 100) + "%")
@@ -339,9 +346,10 @@ print("Prioritize capturing 1*")
 for i in range(runs):
     myrun = PARun(scarecrow, max_time, False, charge, prio_cutoff, 2, store_prio, extra, svarog, True)
     result = myrun.run()
-    if result > 0:
+    if result['complete']:
         success += 1
-    if result != -2:
+        encounter += 1
+    elif result['summary']['Scarecrow']['failure'] > 0:
         encounter += 1
 print(str(encounter) + " out of " + str(runs) + " had boss encounters.")
 print("Probability: " + str(encounter / runs * 100) + "%")

@@ -117,6 +117,8 @@ class PARun(object):
         # Increase the time by 1 unit
         self.time += 1
         # Gain 1 charge ONLY IF we did not reach the end of the banner
+        # The 1 charge earned at the end of banner will happen right after this banner ends
+        # Therefore it cannot be used on this banner
         if self.time < self.max_time:
             self.charge += 1
         # If reset cooldown has not ended, shorten it
@@ -219,6 +221,10 @@ class PARun(object):
 
     # Check if we need to do a timeskip
     def should_inc(self):
+        # If we have completed our targets, we will try to save up to 14 charges
+        # This will also prevent unnecessary usage of extra impulses and Svarogs
+        if self.complete and self.charge < 14:
+            return True
         # If we are out of charges, and we have not reached the end of the banner
         # We should do a timeskip
         if self.charge == 0 and self.time < self.max_time:

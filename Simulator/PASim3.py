@@ -1,7 +1,7 @@
 import random
 
 # The class that contains the state of a PA Banner Simulation Run
-class PARun(object):
+class PASim(object):
     # Initialize the banner
     def __init__(self, banner, max_time = 56, detail = False, charge = 14, prio_cutoff = 1, reset_prio = 1, store_prio = 2,
                  extra = 16, svarog = 11, early_term = True, whale = False):
@@ -320,17 +320,17 @@ def run_test():
     scarecrow = banners.get_banner('Scarecrow', [1, 3, 3, 3, 2, 2, 2, 2, 2, 2, 2])
 
     # A test run with detailed prints
-    myrun = PARun(scarecrow, max_time, True, charge, prio_cutoff, reset_prio, store_prio, extra, svarog, True, False)
+    myrun = PASim(scarecrow, max_time, True, charge, prio_cutoff, reset_prio, store_prio, extra, svarog, True, False)
     report = myrun.run()
     print(report)
     print("")
     # Testing without early termination
-    myrun = PARun(scarecrow, max_time, True, charge, prio_cutoff, reset_prio, store_prio, extra, svarog, False, False)
+    myrun = PASim(scarecrow, max_time, True, charge, prio_cutoff, reset_prio, store_prio, extra, svarog, False, False)
     report = myrun.run()
     print(report)
     print("")
     # Testing with whale
-    myrun = PARun(scarecrow, max_time, True, charge, prio_cutoff, reset_prio, store_prio, extra, svarog, True, True)
+    myrun = PASim(scarecrow, max_time, True, charge, prio_cutoff, reset_prio, store_prio, extra, svarog, True, True)
     report = myrun.run()
     print(report)
     print("")
@@ -338,7 +338,7 @@ def run_test():
     # Fun exercise: see how many runs capture Scarecrow as the 100th capture
     runs = 0
     for i in range(100000):
-        myrun = PARun(scarecrow, max_time, False, charge, prio_cutoff, reset_prio, store_prio, extra, svarog, True, True)
+        myrun = PASim(scarecrow, max_time, False, charge, prio_cutoff, reset_prio, store_prio, extra, svarog, True, True)
         report = myrun.run()
         cleared = 0
         for i in report['summary']:
@@ -355,7 +355,7 @@ def run_test():
     # Scenario 1: reset whenever there is no boss
     print("Prioritize resetting")
     for i in range(runs):
-        myrun = PARun(scarecrow, max_time, False, charge, prio_cutoff, reset_prio, store_prio, extra, svarog, True, False)
+        myrun = PASim(scarecrow, max_time, False, charge, prio_cutoff, reset_prio, store_prio, extra, svarog, True, False)
         result = myrun.run()
         if result['complete']:
             success += 1
@@ -371,7 +371,7 @@ def run_test():
     # Scenario 2: reset only when it's all 2*
     print("Prioritize capturing 1*")
     for i in range(runs):
-        myrun = PARun(scarecrow, max_time, False, charge, prio_cutoff, 2, store_prio, extra, svarog, True, False)
+        myrun = PASim(scarecrow, max_time, False, charge, prio_cutoff, 2, store_prio, extra, svarog, True, False)
         result = myrun.run()
         if result['complete']:
             success += 1

@@ -4,7 +4,7 @@ import random
 class PARun(object):
     # Initialize the banner
     def __init__(self, banner, max_time = 56, detail = False, charge = 14, prio_cutoff = 1, reset_prio = 1, store_prio = 2,
-                 extra = 16, svarog = 11, early_term = True):
+                 extra = 16, svarog = 11, early_term = True, whale = False):
         # Stores the information on whether to print the simulation in detail or not
         self.detail = detail
         # Let 0 denote 1* units, 1 denote 2* units and 2 denote 3* units
@@ -53,6 +53,11 @@ class PARun(object):
         # The refresh starts with the 72 hour countdown for every banner
         # Which is 6 time units
         self.reset = 6
+        # Determines if you plan to whale or not
+        # A whaling simulation means that you will ensure success no matter what
+        self.whale = whale
+        # Notes down the amount of Svarogs whaled
+        self.whale_svarog = 0
 
         # Initialize the displayed units from the current pool
         self.display = []
@@ -112,6 +117,7 @@ class PARun(object):
         print("Regular impulses remaining:", self.charge)
         print("Extra impulses remaining:", self.extra)
         print("Svarogs remaining:", self.svarog)
+        print("Svarogs whaled:", self.whale_svarog)
         print("Reset cooldown:", self.reset / 2)
         print("Currently displayed units:", self.print_display())
 
@@ -132,7 +138,10 @@ class PARun(object):
 
     # Simulate using a Svarog
     def use_svarog(self):
-        self.svarog -= 1
+        if self.svarog > 0:
+            self.svarog -= 1
+        else:
+            self.whale_svarog += 1
         self.used_svarog += 1
         # Svarogs allow you to capture any unit in the pool at random, regardless if it is on display or not
         index = random.randint(0, sum(self.count) - 1)
@@ -166,8 +175,8 @@ class PARun(object):
         elif self.extra > 0:
             self.extra -= 1
             action += " with an extra impulse"
-        # If you have a Svarog, use it now
-        elif self.svarog > 0:
+        # Otherwise, use a Svarog
+        else:
             self.use_svarog()
             # Skip the rest of the logic as it does not apply to Svarog captures
             return
@@ -229,6 +238,10 @@ class PARun(object):
 
     # Check if we need to do a timeskip
     def should_inc(self):
+        # If we are at the end of the banner, we plan to whale and the target is not complete
+        # Do not timeskip
+        if self.time == self.max_time and self.whale and not self.complete:
+            return False
         # If we have completed our targets, we will try to save up to 14 charges
         # This will also prevent unnecessary usage of extra impulses and Svarogs
         if self.complete and self.charge < 14:
@@ -289,6 +302,7 @@ class PARun(object):
                  'svarog': self.svarog,
                  'used': self.used,
                  'used_svarog': self.used_svarog,
+                 'whale_svarog': self.whale_svarog,
                  'time': self.time }                 
 
 # Testing (and sample) code on PARun usage
@@ -316,11 +330,17 @@ def run_test():
                  {'name': 'Prowler', 'rarity': 1, 'prio': 2, 'count': 11}]
 
     # A test run with detailed prints
-    myrun = PARun(scarecrow, max_time, True, charge, prio_cutoff, reset_prio, store_prio, extra, svarog, True)
+    myrun = PARun(scarecrow, max_time, True, charge, prio_cutoff, reset_prio, store_prio, extra, svarog, True, False)
     report = myrun.run()
     print(report)
+    print("")
     # Testing without early termination
-    myrun = PARun(scarecrow, max_time, True, charge, prio_cutoff, reset_prio, store_prio, extra, svarog, False)
+    myrun = PARun(scarecrow, max_time, True, charge, prio_cutoff, reset_prio, store_prio, extra, svarog, False, False)
+    report = myrun.run()
+    print(report)
+    print("")
+    # Testing with whale
+    myrun = PARun(scarecrow, max_time, True, charge, prio_cutoff, reset_prio, store_prio, extra, svarog, True, True)
     report = myrun.run()
     print(report)
     print("")
@@ -328,7 +348,7 @@ def run_test():
     # Fun exercise: see how many runs capture Scarecrow as the 100th capture
     runs = 0
     for i in range(100000):
-        myrun = PARun(scarecrow, max_time, False, charge, prio_cutoff, reset_prio, store_prio, extra, 100, True)
+        myrun = PARun(scarecrow, max_time, False, charge, prio_cutoff, reset_prio, store_prio, extra, svarog, True, True)
         report = myrun.run()
         cleared = 0
         for i in report['summary']:
@@ -345,7 +365,7 @@ def run_test():
     # Scenario 1: reset whenever there is no boss
     print("Prioritize resetting")
     for i in range(runs):
-        myrun = PARun(scarecrow, max_time, False, charge, prio_cutoff, reset_prio, store_prio, extra, svarog, True)
+        myrun = PARun(scarecrow, max_time, False, charge, prio_cutoff, reset_prio, store_prio, extra, svarog, True, False)
         result = myrun.run()
         if result['complete']:
             success += 1
@@ -361,7 +381,7 @@ def run_test():
     # Scenario 2: reset only when it's all 2*
     print("Prioritize capturing 1*")
     for i in range(runs):
-        myrun = PARun(scarecrow, max_time, False, charge, prio_cutoff, 2, store_prio, extra, svarog, True)
+        myrun = PARun(scarecrow, max_time, False, charge, prio_cutoff, 2, store_prio, extra, svarog, True, False)
         result = myrun.run()
         if result['complete']:
             success += 1

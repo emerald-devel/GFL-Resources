@@ -96,6 +96,8 @@ class PARun(object):
 
     # Pretty prints the display
     def print_display(self):
+        if len(self.display) == 0:
+            return "[]"
         string = "["
         for i in self.display:
             string += i['name'] + " (" + str(i['rarity']) + "*), "
@@ -289,69 +291,86 @@ class PARun(object):
                  'used_svarog': self.used_svarog,
                  'time': self.time }                 
 
-# Modify the parameters if you need to do so
-max_time = 56
-charge = 14
-prio_cutoff = 1
-reset_prio = 1
-store_prio = 2
-extra = 16
-svarog = 11
+# Testing (and sample) code on PARun usage
+def run_test():
+    # Modify the parameters if you need to do so
+    max_time = 56
+    charge = 14
+    prio_cutoff = 1
+    reset_prio = 1
+    store_prio = 2
+    extra = 16
+    svarog = 11
 
-# Define the Scarecrow banner
-scarecrow = [{'name': 'Scarecrow', 'rarity': 3, 'prio': 1, 'count': 1},
-             {'name': 'Brute', 'rarity': 2, 'prio': 3, 'count': 9},
-             {'name': 'Dragoon', 'rarity': 2, 'prio': 3, 'count': 9},
-             {'name': 'Aegis', 'rarity': 2, 'prio': 3, 'count': 10},
-             {'name': 'Ripper', 'rarity': 1, 'prio': 2, 'count': 10},
-             {'name': 'Vespid', 'rarity': 1, 'prio': 2, 'count': 10},
-             {'name': 'Guard', 'rarity': 1, 'prio': 2, 'count': 10},
-             {'name': 'Jaeger', 'rarity': 1, 'prio': 2, 'count': 10},
-             {'name': 'Striker', 'rarity': 1, 'prio': 2, 'count': 10},
-             {'name': 'Scout', 'rarity': 1, 'prio': 2, 'count': 10},
-             {'name': 'Prowler', 'rarity': 1, 'prio': 2, 'count': 11}]
+    # Define the Scarecrow banner
+    scarecrow = [{'name': 'Scarecrow', 'rarity': 3, 'prio': 1, 'count': 1},
+                 {'name': 'Brute', 'rarity': 2, 'prio': 3, 'count': 9},
+                 {'name': 'Dragoon', 'rarity': 2, 'prio': 3, 'count': 9},
+                 {'name': 'Aegis', 'rarity': 2, 'prio': 3, 'count': 10},
+                 {'name': 'Ripper', 'rarity': 1, 'prio': 2, 'count': 10},
+                 {'name': 'Vespid', 'rarity': 1, 'prio': 2, 'count': 10},
+                 {'name': 'Guard', 'rarity': 1, 'prio': 2, 'count': 10},
+                 {'name': 'Jaeger', 'rarity': 1, 'prio': 2, 'count': 10},
+                 {'name': 'Striker', 'rarity': 1, 'prio': 2, 'count': 10},
+                 {'name': 'Scout', 'rarity': 1, 'prio': 2, 'count': 10},
+                 {'name': 'Prowler', 'rarity': 1, 'prio': 2, 'count': 11}]
 
-# A test run with detailed prints
-myrun = PARun(scarecrow, max_time, True, charge, prio_cutoff, reset_prio, store_prio, extra, svarog, True)
-report = myrun.run()
-print(report)
-myrun = PARun(scarecrow, max_time, True, charge, prio_cutoff, reset_prio, store_prio, extra, svarog, False)
-report = myrun.run()
-print(report)
+    # A test run with detailed prints
+    myrun = PARun(scarecrow, max_time, True, charge, prio_cutoff, reset_prio, store_prio, extra, svarog, True)
+    report = myrun.run()
+    print(report)
+    # Testing without early termination
+    myrun = PARun(scarecrow, max_time, True, charge, prio_cutoff, reset_prio, store_prio, extra, svarog, False)
+    report = myrun.run()
+    print(report)
+    print("")
 
-# Experimenting
-runs = 100000
-success = 0
-encounter = 0
-# Scenario 1: reset whenever there is no boss
-print("Prioritize resetting")
-for i in range(runs):
-    myrun = PARun(scarecrow, max_time, False, charge, prio_cutoff, reset_prio, store_prio, extra, svarog, True)
-    result = myrun.run()
-    if result['complete']:
-        success += 1
-        encounter += 1
-    elif result['summary']['Scarecrow']['failure'] > 0:
-        encounter += 1
-print(str(encounter) + " out of " + str(runs) + " had boss encounters.")
-print("Probability: " + str(encounter / runs * 100) + "%")
-print(str(success) + " out of " + str(runs) + " runs are successful.")
-print("Probability: " + str(success / runs * 100) + "%")
-print("")
+    # Fun exercise: see how many runs capture Scarecrow as the 100th capture
+    runs = 0
+    for i in range(100000):
+        myrun = PARun(scarecrow, max_time, False, charge, prio_cutoff, reset_prio, store_prio, extra, 100, True)
+        report = myrun.run()
+        cleared = 0
+        for i in report['summary']:
+            cleared += report['summary'][i]['success']
+        if cleared == 100:
+            runs += 1
+    print("Runs that captured Scarecrow as the 100th capture: " + str(runs) + "/100000 (" + str(runs / 10000) + "%)")
+    print("")
 
-success = 0
-encounter = 0
-# Scenario 2: reset only when it's all 2*
-print("Prioritize capturing 1*")
-for i in range(runs):
-    myrun = PARun(scarecrow, max_time, False, charge, prio_cutoff, 2, store_prio, extra, svarog, True)
-    result = myrun.run()
-    if result['complete']:
-        success += 1
-        encounter += 1
-    elif result['summary']['Scarecrow']['failure'] > 0:
-        encounter += 1
-print(str(encounter) + " out of " + str(runs) + " had boss encounters.")
-print("Probability: " + str(encounter / runs * 100) + "%")
-print(str(success) + " out of " + str(runs) + " runs are successful.")
-print("Probability: " + str(success / runs * 100) + "%")
+    # Experimenting
+    runs = 100000
+    success = 0
+    encounter = 0
+    # Scenario 1: reset whenever there is no boss
+    print("Prioritize resetting")
+    for i in range(runs):
+        myrun = PARun(scarecrow, max_time, False, charge, prio_cutoff, reset_prio, store_prio, extra, svarog, True)
+        result = myrun.run()
+        if result['complete']:
+            success += 1
+            encounter += 1
+        elif result['summary']['Scarecrow']['failure'] > 0:
+            encounter += 1
+    print(str(encounter) + " out of " + str(runs) + " had boss encounters (" + str(encounter / runs * 100) + "%)")
+    print(str(success) + " out of " + str(runs) + " runs are successful (" + str(success / runs * 100) + "%)")
+    print("")
+
+    success = 0
+    encounter = 0
+    # Scenario 2: reset only when it's all 2*
+    print("Prioritize capturing 1*")
+    for i in range(runs):
+        myrun = PARun(scarecrow, max_time, False, charge, prio_cutoff, 2, store_prio, extra, svarog, True)
+        result = myrun.run()
+        if result['complete']:
+            success += 1
+            encounter += 1
+        elif result['summary']['Scarecrow']['failure'] > 0:
+            encounter += 1
+    print(str(encounter) + " out of " + str(runs) + " had boss encounters (" + str(encounter / runs * 100) + "%)")
+    print(str(success) + " out of " + str(runs) + " runs are successful (" + str(success / runs * 100) + "%)")
+    print("")
+
+if __name__ == "__main__":
+    run_test()

@@ -316,18 +316,8 @@ def run_test():
     extra = 16
     svarog = 11
 
-    # Define the Scarecrow banner
-    scarecrow = [{'name': 'Scarecrow', 'rarity': 3, 'prio': 1, 'count': 1},
-                 {'name': 'Brute', 'rarity': 2, 'prio': 3, 'count': 9},
-                 {'name': 'Dragoon', 'rarity': 2, 'prio': 3, 'count': 9},
-                 {'name': 'Aegis', 'rarity': 2, 'prio': 3, 'count': 10},
-                 {'name': 'Ripper', 'rarity': 1, 'prio': 2, 'count': 10},
-                 {'name': 'Vespid', 'rarity': 1, 'prio': 2, 'count': 10},
-                 {'name': 'Guard', 'rarity': 1, 'prio': 2, 'count': 10},
-                 {'name': 'Jaeger', 'rarity': 1, 'prio': 2, 'count': 10},
-                 {'name': 'Striker', 'rarity': 1, 'prio': 2, 'count': 10},
-                 {'name': 'Scout', 'rarity': 1, 'prio': 2, 'count': 10},
-                 {'name': 'Prowler', 'rarity': 1, 'prio': 2, 'count': 11}]
+    import banners
+    scarecrow = banners.get_banner('Scarecrow', [1, 3, 3, 3, 2, 2, 2, 2, 2, 2, 2])
 
     # A test run with detailed prints
     myrun = PARun(scarecrow, max_time, True, charge, prio_cutoff, reset_prio, store_prio, extra, svarog, True, False)

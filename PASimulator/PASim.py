@@ -45,6 +45,10 @@ class PASim(object):
         self.svarog = svarog
         # The number of charges used before completing the target
         self.used = 0
+        # The number of charges used throughout the simulation
+        self.used_charge = 0
+        # The number of extra charges used throughout the simulation
+        self.used_extra = 0
         # The number of Svarogs used before completing the target
         self.used_svarog = 0
         # The starting time period, which is time 0
@@ -170,10 +174,12 @@ class PASim(object):
         # Use a regular charge if you have one
         if self.charge > 0:
             self.charge -= 1
+            self.used_charge += 1
             action += " with a regular impulse"
         # Otherwise, use an extra charge if you have one
         elif self.extra > 0:
             self.extra -= 1
+            self.used_extra += 1
             action += " with an extra impulse"
         # Otherwise, use a Svarog
         else:
@@ -301,6 +307,8 @@ class PASim(object):
                  'extra': self.extra,
                  'svarog': self.svarog,
                  'used': self.used,
+                 'used_charge': self.used_charge,
+                 'used_extra': self.used_extra,
                  'used_svarog': self.used_svarog,
                  'whale_svarog': self.whale_svarog,
                  'time': self.time }                 

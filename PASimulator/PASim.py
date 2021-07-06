@@ -19,6 +19,15 @@ class PASim(object):
         # Keeps a summary of the successes and failures of every capture
         self.summary = {}
 
+        # Store the starting amount of charges and Svarogs for reporting
+        self.start_charge = charge
+        self.start_extra = extra
+        self.start_svarog = svarog
+
+        # Store the name of the ringleader
+        self.ringleader = banner[0]['name']
+        self.banner = banner
+
         # Populate the pool
         for i in banner:
             self.pool += [i] * i['count']
@@ -292,6 +301,63 @@ class PASim(object):
         # Check if we have achieved our target
         self.check_complete()
 
+    # Print summary of simulation
+    def print_summary(self):
+        # Summary header
+        print("Simulation summary")
+        print("Ringleader:", self.ringleader)
+        # Print out the targets
+        targets = "Targets: ["
+        have_target = False
+        for i in self.banner:
+            if i['prio'] <= self.prio_cutoff:
+                have_target = True
+                targets += i['name'] + ', '
+        if have_target:
+            targets = targets[:-2] + ']'
+        else:
+            targets = targets[:-1] + 'None'
+        print(targets)
+        print('Initial regular impulses:', self.start_charge)
+        print('Initial extra impulses:', self.start_extra)
+        print('Initial Svarogs:', self.start_svarog)
+        print('Banner period:', self.max_time / 2, 'days')
+        print('Reset priority:', self.reset_prio)
+        print('Store priority:', self.store_prio)
+        if self.early_term:
+            print('Simulation terminates as soon as targets are captured')
+        else:
+            print('Full simulation will be ran')
+        if self.whale:
+            print('Whaling mode on: will whale until targets are captured')
+        else:
+            print('F2P mode on')
+
+        # Print completion status
+        if self.complete:
+            print('Targets captured')
+        else:
+            print('Targets not captured')
+        print('Regular impulses used:', self.used_charge)
+        print('Extra impulses used:', self.used_extra)
+        print('Svarogs used:', self.used_svarog)
+        if self.whale:
+            print('Svarogs whaled:', self.whale_svarog)
+        if self.complete:
+            print('Total charges used before target completion:', self.used)
+        print('Regular impulses remaining:', self.charge)
+        print('Extra impulses remaining:', self.extra)
+        print('Svarogs remaining:', self.svarog)
+        
+        # Print out summary of captured units
+        print('Units captured:')
+        for i in self.banner:
+            print(i['name'] + ' (' + str(i['rarity']) + '*): '
+                  + str(self.summary[i['name']]['success']) + '/' + str(i['count']) + ', '
+                  + str(self.summary[i['name']]['failure']) + ' failures')
+
+        print('')
+
     # Perform a full simulation
     def run(self): 
         if self.detail:
@@ -300,8 +366,17 @@ class PASim(object):
         # or opt to not terminate early
         while(self.time <= self.max_time and (not self.early_term or not self.complete)):
             self.step()
+        
+        # Proper simulation summary reporting
+        if self.detail:
+            self.print_summary()
+
         # Return a summary report of the simulation
-        return { 'complete': self.complete,
+        return { 'ringleader': self.ringleader,
+                 'complete': self.complete,
+                 'start_charge': self.start_charge,
+                 'start_extra': self.start_extra,
+                 'start_svarog': self.start_svarog,
                  'summary': self.summary,
                  'charge': self.charge,
                  'extra': self.extra,
@@ -330,18 +405,12 @@ def run_test():
     # A test run with detailed prints
     myrun = PASim(scarecrow, max_time, True, charge, prio_cutoff, reset_prio, store_prio, extra, svarog, True, False)
     report = myrun.run()
-    print(report)
-    print("")
     # Testing without early termination
     myrun = PASim(scarecrow, max_time, True, charge, prio_cutoff, reset_prio, store_prio, extra, svarog, False, False)
     report = myrun.run()
-    print(report)
-    print("")
     # Testing with whale
     myrun = PASim(scarecrow, max_time, True, charge, prio_cutoff, reset_prio, store_prio, extra, svarog, True, True)
     report = myrun.run()
-    print(report)
-    print("")
 
     # Fun exercise: see how many runs capture Scarecrow as the 100th capture
     runs = 0

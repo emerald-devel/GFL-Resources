@@ -38,9 +38,6 @@ class PALongSim(object):
                           self.sim_prios[i][2], self.extra, self.svarog, False, self.whale)
             # Run the simulation and print the report
             report = myrun.run()
-            if self.detail:
-                print(report)
-                print("")
             self.summary[self.banners_list[i]] = report
             # You earn one charge during banner transition assuming optimal charges
             self.charge = report['charge'] + 1
